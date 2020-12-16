@@ -39,6 +39,12 @@ if df is None:
     'För att göra analysen, vänligen ladda upp RSProduction tabell-data. Data som laddas upp här lagras inte utan försvinner när du lämnar sidan.'
     st.info(msg)
     st.stop()
+if st.button('Ytterligare information'):
+    st.info('Till vänster finns ett filter där man kan filterera på stoppkod, maskin/mätpunkt, skift och dag. ' + \
+            'Filtrerar du på "Alla" så visas all data inom den valda kategorin (dvs. filtrerar man med "Alla" på samtliga kategorier visas all data). ' + \
+            'I tabellen nedan kan du klicka på kolumner för att sortera värden.')
+else:
+    pass
 #file = st.file_uploader('Ladda upp RSProduction tabell-data')
 stop_df = df[['Total stopptid in hours', 'Stopporsak', 'Mätpunkt', 'Skift']].groupby(['Stopporsak', 'Mätpunkt', 'Skift']).mean().reset_index().rename(columns={'Total stopptid in hours':'Mean stopptid in hours'})
 stop_df['Total stopptid in hours'] = df[['Total stopptid in hours', 'Stopporsak', 'Mätpunkt', 'Skift']].groupby(['Stopporsak', 'Mätpunkt', 'Skift']).sum().reset_index()['Total stopptid in hours']
@@ -97,7 +103,7 @@ ax.hist(filter_df['Total stopptid in hours'], bins = 50)
 ax.tick_params(axis = 'x', labelsize = 8)
 ax.set_xlabel('Tid (timmar)')
 ax.set_ylabel('Antal')
-ax.set_title(f'Distr. stoppkod/mätpunkt/skift/dag: {stop_code}/{measure_point}/{shift}/{day}')
+ax.set_title(f'{stop_code}/{measure_point}/{shift}/{day}')
 
 st.pyplot(fig)
 
@@ -112,7 +118,7 @@ ax.set_xticklabels([str(t.hour) for t in time_lims])
 ax.set_xlabel('Tid på dygnet')
 ax.set_ylabel('Total stopptid i timmar')
 ax.hist(filter_time_df['Starttid'], bins = 24)
-ax.set_title(f'Stoppkod/mätpunkt/skift/dag: {stop_code}/{measure_point}/{shift}/{day}')
+ax.set_title(f'{stop_code}/{measure_point}/{shift}/{day}')
 st.pyplot(fig)
 
 st.text('Stopptid per dag')
@@ -132,7 +138,7 @@ except ValueError:
 ax.tick_params(axis = 'x', labelsize = 10)
 ax.set_xlabel('Tid')
 ax.set_ylabel('Timmar')
-ax.set_title(f'Stoppkod/mätpunkt/skift/dag: {stop_code}/{measure_point}/{shift}/{day}')
+ax.set_title(f'{stop_code}/{measure_point}/{shift}/{day}')
 st.pyplot(fig)
 #%%
 st.header('Korrelationsanalys')
@@ -265,7 +271,7 @@ st.altair_chart(hm, use_container_width = True)
 
 #%%
 st.header('Ordmoln av kommentarer')
-
+use_filter = st.checkbox('Använd filter', value = False)
 # if os.path.isfile(f'./plots/{data_file.replace("xlsx", "png")}'):
 #     from PIL import Image
 
@@ -283,7 +289,10 @@ n_words = st.slider('Antal ord', 50, 500, value = 200, step = 50)
 def create_wordcloud(n_words):
     stopwords = {'på', 'till', 'och', 'från', 'med', 'av', 'en', 'så', 'igen',
                  'vid', 'efter', 'som', 'den', 'det', 'att'}
-    comments = re.sub(' +', ' ', ' '.join(df['Kommentar'].dropna()))
+    if use_filter:
+        comments = re.sub(' +', ' ', ' '.join(filter_df['Kommentar'].dropna()))
+    else:
+        comments = re.sub(' +', ' ', ' '.join(df['Kommentar'].dropna()))
     wc = WordCloud(width=1600, height=800, stopwords=stopwords, max_words = n_words).generate(comments)
     
     return wc
