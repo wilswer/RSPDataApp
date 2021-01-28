@@ -18,15 +18,15 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 
 #%%
 st.title('RSProduction data')
-#data_file = st.sidebar.selectbox('Välj tabell-data', [i for i in os.listdir('./data') if i.endswith('.xlsx')])
+data_file = st.sidebar.selectbox('Välj tabell-data', [i for i in os.listdir('./data/') if i.endswith('.xlsx')], index = 1)
 #data_file = st.sidebar.file_uploader('Välj fil', type = ['xlsx'])
-data_file = st.sidebar.file_uploader('Ladda upp RSProduction tabell-data', type = ['xlsx', 'csv'])
+#data_file = st.sidebar.file_uploader('Ladda upp RSProduction tabell-data', type = ['xlsx', 'csv'])
 @st.cache
 def load_data(data_file):
     if data_file is None:
         df = None
     else:
-        df = pd.read_excel(data_file, sheet_name = 'Worksheet1')
+        df = pd.read_excel('./data/' + data_file, sheet_name = 'Worksheet1')
         df = df.iloc[:-1]
         df['Total stopptid in hours'] = df['Total stopptid in hours'].astype(float)
         df['Day'] = df.Starttid.apply(lambda x: x.strftime('%A'))
@@ -160,6 +160,7 @@ st.text('Stoppkod per dag data')
 st.write(day_df)
 #%%
 corrmat = day_df.corr()
+high_corr_idx = np.abs(corrmat.values).argsort()
 st.text('Korrelationsmatris')
 cor_data = (corrmat.stack()
             .reset_index()     # The stacking results in an index on the correlation values, we need the index as normal columns for Altair
@@ -192,6 +193,11 @@ cor_plot = base.mark_rect().encode(
 ).add_selection(var_sel_cor)
 
 st.altair_chart(cor_plot + text, use_container_width=True)
+
+idx = corrmat.abs().unstack()[corrmat.unstack() != 1].argsort().values
+high_corrs = corrmat.unstack()[corrmat.unstack() != 1][idx][::-2]
+st.text('Kolumner med hög korrelation:')
+st.dataframe(high_corrs)
 #%%
 st.text('Plotta två kolumner i data mot varandra.')
 cols = []
@@ -287,8 +293,8 @@ use_filter = st.checkbox('Använd filter', value = False)
 n_words = st.slider('Antal ord', 50, 500, value = 200, step = 50)
 @st.cache
 def create_wordcloud(n_words):
-    stopwords = {'på', 'till', 'och', 'från', 'med', 'av', 'en', 'så', 'igen',
-                 'vid', 'efter', 'som', 'den', 'det', 'att'}
+    stopwords = {'på', 'till', 'och', 'från', 'med', 'av', 'en', 'så', 'igen', 'vid', 'efter', 'som', 'den', 'det', 'att', 'inte', 'för', 'då', 'in'}
+    #stopwords = {}
     if use_filter:
         comments = re.sub(' +', ' ', ' '.join(filter_df['Kommentar'].dropna()))
     else:
