@@ -18,15 +18,15 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 
 #%%
 st.title('RSProduction data')
-data_file = st.sidebar.selectbox('Välj tabell-data', [i for i in os.listdir('./data/') if i.endswith('.xlsx')], index = 1)
+#data_file = st.sidebar.selectbox('Välj tabell-data', [i for i in os.listdir('./data/') if i.endswith('.xlsx')], index = 1)
 #data_file = st.sidebar.file_uploader('Välj fil', type = ['xlsx'])
-#data_file = st.sidebar.file_uploader('Ladda upp RSProduction tabell-data', type = ['xlsx', 'csv'])
+data_file = st.sidebar.file_uploader('Ladda upp RSProduction tabell-data', type = ['xlsx', 'csv'])
 @st.cache
 def load_data(data_file):
     if data_file is None:
         df = None
     else:
-        df = pd.read_excel('./data/' + data_file, sheet_name = 'Worksheet1')
+        df = pd.read_excel(data_file, sheet_name = 'Worksheet1')
         df = df.iloc[:-1]
         df['Total stopptid in hours'] = df['Total stopptid in hours'].astype(float)
         df['Day'] = df.Starttid.apply(lambda x: x.strftime('%A'))
